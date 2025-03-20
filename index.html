@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Recommender</title>
+    <link rel="icon" href="https://img.icons8.com/ios-filled/50/ffffff/book.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5dc; /* Beige background */
+            color: #4a3c31; /* Dark brown text for contrast */
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #d2b48c; /* Tan border */
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #8b5a2b; /* Medium brown for the title */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header h1::before {
+            content: '📚';
+            font-size: 1.2em;
+        }
+
+        header p {
+            font-size: 1em;
+            color: #6b4e31; /* Slightly lighter brown for subtitle */
+            font-weight: 300;
+            margin-top: 5px;
+        }
+
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #faf0e6; /* Light beige for the chat section */
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-box {
+            flex: 1;
+            max-height: 50vh; /* Adjusted height to make space for liked books section */
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 8px;
+            background: #fff5e6; /* Very light beige for the chat box */
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 15px 20px;
+            border-radius: 12px;
+            position: relative;
+            max-width: 85%;
+            transition: all 0.3s ease;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #87ceeb, #b0e0e6); /* Soft sky blue gradient for user messages */
+            color: #4a3c31;
+            margin-left: auto;
+            margin-right: 10px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background: linear-gradient(135deg, #90ee90, #98fb98); /* Soft pale green gradient for assistant messages */
+            color: #4a3c31;
+            margin-right: auto;
+            margin-left: 10px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: inherit;
+            bottom: 0;
+        }
+
+        .message.user::before {
+            right: -6px;
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+
+        .message.assistant::before {
+            left: -6px;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+
+        .message.assistant ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .message.assistant li {
+            margin-bottom: 12px;
+        }
+
+        .message.assistant strong {
+            color: #4a3c31;
+            font-weight: 600;
+        }
+
+        .message.assistant .book-title {
+            font-size: 1.4em; /* Increased font size for better visibility */
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Increased gap for better spacing */
+            flex-wrap: wrap; /* Ensure the button doesn’t overflow on small screens */
+        }
+
+        .message.assistant .book-details {
+            padding-left: 15px;
+            color: #4a3c31;
+        }
+
+        .message.assistant .book-details li {
+            margin-bottom: 5px;
+        }
+
+        .message.typing::after {
+            content: 'Typing...';
+            display: inline-block;
+            font-style: italic;
+            color: #4a3c31;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .like-button {
+            padding: 8px 15px; /* Increased padding for a larger button */
+            background: linear-gradient(135deg, #ffcc80, #ff9800); /* Changed to a more distinct orange gradient for visibility */
+            color: #4a3c31;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em; /* Increased font size */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .like-button:hover {
+            background: linear-gradient(135deg, #ffb74d, #f57c00);
+        }
+
+        .like-button:active {
+            background: linear-gradient(135deg, #ff9800, #ef6c00);
+        }
+
+        .liked-books-section {
+            margin-top: 20px;
+            background: #faf0e6;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .liked-books-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .liked-books-section h2 {
+            font-size: 1.5em;
+            color: #8b5a2b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .liked-books-section h2::before {
+            content: '❤️';
+            font-size: 1.2em;
+        }
+
+        .toggle-button {
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #deb887, #f0c05a);
+            color: #4a3c31;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-button:hover {
+            background: linear-gradient(135deg, #d2b48c, #e6b800);
+        }
+
+        .toggle-button:active {
+            background: linear-gradient(135deg, #cd853f, #daa520);
+        }
+
+        .liked-books-content {
+            display: none; /* Hidden by default, controlled by JavaScript */
+        }
+
+        .liked-books-content.visible {
+            display: block;
+        }
+
+        .liked-books-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .liked-books-list li {
+            padding: 10px;
+            background: #fff5e6;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-button {
+            padding: 5px 10px;
+            background: linear-gradient(135deg, #cd853f, #daa520);
+            color: #4a3c31;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .remove-button:hover {
+            background: linear-gradient(135deg, #d2b48c, #e6b800);
+        }
+
+        .remove-button:active {
+            background: linear-gradient(135deg, #deb887, #f0c05a);
+        }
+
+        .clear-button {
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #cd853f, #daa520);
+            color: #4a3c31;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .clear-button:hover {
+            background: linear-gradient(135deg, #d2b48c, #e6b800);
+        }
+
+        .clear-button:active {
+            background: linear-gradient(135deg, #deb887, #f0c05a);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #f0e6d2; /* Slightly darker beige for the input area */
+            border-top: 1px solid #d2b48c;
+            border-radius: 0 0 12px 12px;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #fffaf0; /* Very light beige for the input field */
+            color: #4a3c31;
+            font-size: 1em;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.3s ease;
+        }
+
+        #userInput:focus {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #userInput::placeholder {
+            color: #8b5a2b;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #deb887, #f0c05a); /* Burlywood to light gold gradient for the button */
+            color: #4a3c31;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #d2b48c, #e6b800);
+        }
+
+        button:active {
+            background: linear-gradient(135deg, #cd853f, #daa520);
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-track {
+            background: #f0e6d2;
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #deb887;
+            border-radius: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: #d2b48c;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 0.9em;
+            color: #6b4e31;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            header p {
+                font-size: 0.9em;
+            }
+
+            .chat-section {
+                padding: 15px;
+            }
+
+            .chat-box {
+                max-height: 40vh;
+            }
+
+            .liked-books-section {
+                padding: 15px;
+            }
+
+            .liked-books-section h2 {
+                font-size: 1.3em;
+            }
+
+            .message.assistant .book-title {
+                font-size: 1.2em; /* Slightly smaller on mobile for better fit */
+                gap: 10px;
+            }
+
+            .like-button {
+                padding: 6px 12px; /* Slightly smaller on mobile */
+                font-size: 0.9em;
+            }
+
+            .input-area {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            #userInput {
+                width: 100%;
+                padding: 10px 15px;
+            }
+
+            button {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .message.user, .message.assistant {
+                max-width: 90%;
+                margin-left: 5%;
+                margin-right: 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Book Recommender</h1>
+            <p>Ask for book recommendations tailored to your taste.</p>
+        </header>
+        <section class="chat-section">
+            <div class="chat-box" id="chatBox">
+                <div class="message assistant">
+                    <p>Hello! I’m your book recommendation assistant. What kind of books do you enjoy? Share your favorite genres, moods (e.g., cozy mysteries, epic fantasies), or authors!</p>
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="E.g., 'I love cozy mysteries set in small towns'" />
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </section>
+        <section class="liked-books-section">
+            <div class="liked-books-header">
+                <h2>Your Liked Books</h2>
+                <button class="toggle-button" id="toggleLikedBooks">Show List</button>
+            </div>
+            <div class="liked-books-content" id="likedBooksContent">
+                <ul class="liked-books-list" id="likedBooksList"></ul>
+                <button class="clear-button" onclick="clearLikedBooks()">Clear List</button>
+            </div>
+        </section>
+        <footer>
+            <p>© 2025 Book Recommender</p>
+        </footer>
+    </div>
+
+    <script>
+        // Gemini API key (hardcoded for local testing only; use a backend proxy for production)
+        const GEMINI_API_KEY = 'AIzaSyB41nLshOxgmozYS1tnLJ0fOPYuBKbvhrk';
+
+        // Function to parse Markdown-like response and convert to HTML with a Like button
+        function parseMarkdownToHTML(content) {
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            let html = '<ul>';
+            let currentBook = null;
+            let bookTitle = '';
+            let bookAuthor = '';
+
+            for (const line of lines) {
+                // Match numbered list items like "1. **Book Title** by Author"
+                const numberedMatch = line.match(/^\d+\.\s*\*\*(.+?)\*\*\s*by\s*(.+)$/);
+                if (numberedMatch) {
+                    if (currentBook) {
+                        html += '</ul></li>';
+                    }
+                    bookTitle = numberedMatch[1].trim();
+                    bookAuthor = numberedMatch[2].trim();
+                    // Escape single quotes in bookTitle and bookAuthor to prevent JavaScript errors
+                    bookTitle = bookTitle.replace(/'/g, "\\'");
+                    bookAuthor = bookAuthor.replace(/'/g, "\\'");
+                    html += `<li><div class="book-title"><strong>${bookTitle}</strong> by ${bookAuthor} <button class="like-button" onclick="likeBook('${bookTitle}', '${bookAuthor}')">Like</button></div><ul class="book-details">`;
+                    currentBook = true;
+                    continue;
+                }
+
+                // Match bullet points like "- **Description**: Text"
+                const bulletMatch = line.match(/^\s*-\s*\*\*([A-Za-z\s]+)\*\*:\s*(.+)$/);
+                if (bulletMatch && currentBook) {
+                    const label = bulletMatch[1].trim();
+                    const text = bulletMatch[2].trim();
+                    html += `<li><strong>${label}:</strong> ${text}</li>`;
+                }
+            }
+
+            if (currentBook) {
+                html += '</ul></li>';
+            }
+            html += '</ul>';
+
+            // If no books were parsed, return a fallback message with the raw content for debugging
+            if (!currentBook) {
+                return `<p>No recommendations could be parsed from the response. Please try a different preference. Raw response for debugging:</p><pre>${content}</pre>`;
+            }
+
+            return html;
+        }
+
+        // Function to add a message to the chat box
+        function addMessage(content, role, isTyping = false) {
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            if (isTyping) {
+                messageDiv.classList.add('typing');
+            }
+
+            if (role === 'assistant' && !isTyping) {
+                // Add introductory text before the recommendations
+                const introText = '<p>Here are some book recommendations based on your preferences:</p>';
+                messageDiv.innerHTML = introText + parseMarkdownToHTML(content);
+            } else {
+                messageDiv.innerHTML = `<p>${content}</p>`;
+            }
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return messageDiv;
+        }
+
+        // Function to send the user's message and get a recommendation from the Gemini API
+        async function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const preferences = userInput.value.trim();
+
+            if (!preferences) {
+                alert("Please enter your reading preferences!");
+                return;
+            }
+
+            // Add user message to the chat
+            addMessage(preferences, 'user');
+
+            // Clear the input field
+            userInput.value = '';
+
+            // Show a typing animation
+            const typingMessage = addMessage("Typing...", 'assistant', true);
+
+            try {
+                // Prepare the prompt for the Gemini API
+                const prompt = `You are a book recommendation assistant. Based on the user's preferences: "${preferences}", provide exactly 3 book recommendations. Format the response as a numbered list with each book in the following strict format, with no additional text before or after the list:
+
+1. **Book Title** by Author Name
+   - **Description**: A brief description of the book (1-2 sentences, 20-40 words).
+   - **Why It Matches**: How this book matches the user's preferences (1 sentence, 10-20 words).
+   - **Recommendation Strength**: How strongly you recommend this book (e.g., "Highly recommended", "Recommended", "Mildly recommended").
+
+Example:
+1. **The Guest List** by Lucy Foley
+   - **Description**: A thriller set on a remote island where a wedding turns deadly.
+   - **Why It Matches**: Matches your love for cozy mysteries with a suspenseful twist.
+   - **Recommendation Strength**: Highly recommended.
+
+Ensure each book has a unique title and author, and the format is followed exactly as shown above, with proper Markdown syntax (e.g., ** for bold, - for bullets). Do not include any introductory text, concluding text, or extra formatting beyond the specified structure. If the preferences are too vague or you cannot provide recommendations, respond with exactly: "Please provide more specific preferences (e.g., 'I love cozy mysteries set in small towns')."`;
+
+                // Make the API request to the Gemini API
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${AIzaSyB41nLshOxgmozYS1tnLJ0fOPYuBKbvhrk}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let generatedText = data.candidates[0].content.parts[0].text;
+
+                // Check for the vague preferences response
+                if (generatedText === "Please provide more specific preferences (e.g., 'I love cozy mysteries set in small towns').") {
+                    throw new Error(generatedText);
+                }
+
+                // Simulate a delay for the typing effect
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Remove the typing message
+                const chatBox = document.getElementById('chatBox');
+                chatBox.removeChild(typingMessage);
+
+                // Add the API response
+                addMessage(generatedText, 'assistant');
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                // Remove the typing message
+                const chatBox = document.getElementById('chatBox');
+                chatBox.removeChild(typingMessage);
+
+                // Show error message
+                addMessage(`Error: ${error.message}`, 'assistant');
+            }
+        }
+
+        // Function to like a book and add it to localStorage
+        function likeBook(title, author) {
+            // Get the current list of liked books from localStorage
+            let likedBooks = JSON.parse(localStorage.getItem('likedBooks')) || [];
+
+            // Check if the book is already in the list to avoid duplicates
+            const bookExists = likedBooks.some(book => book.title === title && book.author === author);
+            if (!bookExists) {
+                // Add the new book to the list
+                likedBooks.push({ title, author });
+                // Save the updated list to localStorage
+                localStorage.setItem('likedBooks', JSON.stringify(likedBooks));
+                // Update the UI
+                updateLikedBooksList();
+            } else {
+                alert('You’ve already liked this book!');
+            }
+        }
+
+        // Function to remove a book from the liked books list
+        function removeBook(title, author) {
+            let likedBooks = JSON.parse(localStorage.getItem('likedBooks')) || [];
+            likedBooks = likedBooks.filter(book => !(book.title === title && book.author === author));
+            localStorage.setItem('likedBooks', JSON.stringify(likedBooks));
+            updateLikedBooksList();
+        }
+
+        // Function to update the liked books list in the UI
+        function updateLikedBooksList() {
+            const likedBooksList = document.getElementById('likedBooksList');
+            const likedBooks = JSON.parse(localStorage.getItem('likedBooks')) || [];
+
+            // Clear the current list
+            likedBooksList.innerHTML = '';
+
+            // Add each liked book to the list
+            likedBooks.forEach(book => {
+                const li = document.createElement('li');
+                li.innerHTML = `${book.title} by ${book.author} <button class="remove-button" onclick="removeBook('${book.title}', '${book.author}')">Remove</button>`;
+                likedBooksList.appendChild(li);
+            });
+
+            // If the list is empty, show a placeholder message
+            if (likedBooks.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'No liked books yet.';
+                li.style.fontStyle = 'italic';
+                likedBooksList.appendChild(li);
+            }
+        }
+
+        // Function to clear the liked books list
+        function clearLikedBooks() {
+            localStorage.removeItem('likedBooks');
+            updateLikedBooksList();
+        }
+
+        // Function to toggle the visibility of the liked books list
+        function toggleLikedBooks() {
+            const content = document.getElementById('likedBooksContent');
+            const toggleButton = document.getElementById('toggleLikedBooks');
+            const isVisible = content.classList.toggle('visible');
+
+            // Update the button text
+            toggleButton.textContent = isVisible ? 'Hide List' : 'Show List';
+
+            // Save the toggle state to localStorage
+            localStorage.setItem('likedBooksVisible', isVisible);
+        }
+
+        // Initialize the liked books list and toggle state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load the liked books list
+            updateLikedBooksList();
+
+            // Load the toggle state
+            const isVisible = localStorage.getItem('likedBooksVisible') === 'true';
+            const content = document.getElementById('likedBooksContent');
+            const toggleButton = document.getElementById('toggleLikedBooks');
+            if (isVisible) {
+                content.classList.add('visible');
+                toggleButton.textContent = 'Hide List';
+            } else {
+                toggleButton.textContent = 'Show List';
+            }
+
+            // Add event listener for the toggle button
+            toggleButton.addEventListener('click', toggleLikedBooks);
+        });
+    </script>
+</body>
+</html>
